@@ -1,0 +1,11 @@
+streamlit
+spacy
+PyMuPDF
+joblib
+scikit-learn
+language-tool-python
+textstat
+pdfminer.six
+numpy
+pandas
+

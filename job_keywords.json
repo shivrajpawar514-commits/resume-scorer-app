@@ -1,0 +1,55 @@
+{
+  "AI/ML Engineer": [
+    "machine learning",
+    "deep learning",
+    "tensorflow",
+    "keras",
+    "pytorch",
+    "neural networks",
+    "nlp",
+    "computer vision",
+    "ai",
+    "model training",
+    "model evaluation",
+    "data preprocessing"
+  ],
+  "Data Scientist": [
+    "data analysis",
+    "statistics",
+    "sql",
+    "python",
+    "data visualization",
+    "pandas",
+    "numpy",
+    "matplotlib",
+    "tableau",
+    "predictive modeling",
+    "data cleaning"
+  ],
+  "Software Engineer": [
+    "java",
+    "python",
+    "c++",
+    "javascript",
+    "react",
+    "node",
+    "api",
+    "backend",
+    "frontend",
+    "git",
+    "devops",
+    "full stack development"
+  ],
+  "Doctor": [
+    "diagnosis",
+    "patient care",
+    "medical records",
+    "clinical research",
+    "healthcare",
+    "treatment planning",
+    "surgery",
+    "pharmacy",
+    "radiology",
+    "pathology"
+  ]
+}

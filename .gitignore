@@ -1,52 +1,37 @@
-# Byte-compiled / optimized / DLL files
+# Environments
+.venv/
+venv/
+env/
+ENV/
+
+# Python cache
 __pycache__/
 *.py[cod]
 *$py.class
-
-# C extensions
 *.so
 
-# Distribution / packaging
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
+# Byte-compiled / optimized / DLL files
+*.pyd
+*.pyo
 
-# Virtual Environments
-.venv/
-venv/
-ENV/
-env/
-env.bak/
-venv.bak/
-
-# macOS
+# OS specific files
 .DS_Store
-.AppleDouble
-.LSOverride
-
-# IDEs
-.idea/
-.vscode/
-*.swp
-*.swo
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
 
 # Streamlit
 .streamlit/
 
-# Temporary files & logs
+# IDE / Editor configs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temporary data / reports
+*.pdf
 *.log

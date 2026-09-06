@@ -26,7 +26,8 @@ SECTION_HEADERS = {
     ],
     "Projects": [
         "projects", "personal projects", "academic projects", "key projects",
-        "open source", "selected projects", "technical projects", "portfolio"
+        "open source", "selected projects", "technical projects", "portfolio",
+        "projects & publications", "projects and publications", "key projects & achievements"
     ],
     "Certifications": [
         "certifications", "certificates", "licenses", "courses",

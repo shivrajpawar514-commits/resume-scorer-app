@@ -5,8 +5,8 @@
 ![Python Version](https://img.shields.io/badge/Python-3.11%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)
 ![Streamlit](https://img.shields.io/badge/Streamlit-1.40%2B-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)
 ![SpaCy](https://img.shields.io/badge/SpaCy-3.8%2B-09A3D5?style=for-the-badge&logo=spacy&logoColor=white)
-![Scikit-Learn](https://img.shields.io/badge/Scikit--Learn-1.4%2B-F7931E?style=for-the-badge&logo=scikit-learn&logoColor=white)
-![Plotly](https://img.shields.io/badge/Plotly-5.22%2B-3F4F75?style=for-the-badge&logo=plotly&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![CI Status](https://img.shields.io/badge/CI-Passing-10B981?style=for-the-badge&logo=github-actions&logoColor=white)
 
 **An advanced, production-grade AI/ML Resume Scorer & ATS Analytics Engine powered by multi-tier NLP parsing, TF-IDF semantic embeddings, Google X-Y-Z quantifiable impact diagnostics, and interactive 5D radar visualizations.**
 
@@ -43,14 +43,11 @@
 - Evaluates compliance with Google's X-Y-Z formula (*"Accomplished [X] as measured by [Y], by doing [Z]"*).
 - Line-by-line ratings (Strong, Moderate, Needs Improvement) with AI suggestions for rewriting weak bullet points.
 
-### 5. ⚖️ Dual Resume A/B Match Tester
-- Side-by-side comparison of two resumes with winning delta badges and comparative 5D radar overlays.
+### 5. 💻 CLI & Batch Evaluation Tool
+- Command-line interface (`cli.py`) for automated scoring and bulk evaluations across entire directories of resumes with JSON and PDF export.
 
-### 6. 📝 Interactive AI Bullet Optimizer
-- Test and transform passive resume bullet points into high-impact 3-tier statements (Junior → Mid → Senior Staff level).
-
-### 7. 📥 Exportable Audit Reports
-- Download formatted **PDF Audit Reports** (built with ReportLab) or **Markdown Summaries**.
+### 6. 🐳 Docker & CI/CD Ready
+- Containerized Docker deployment (`Dockerfile`) and automated GitHub Actions test pipeline (`.github/workflows/ci.yml`).
 
 ---
 
@@ -59,7 +56,15 @@
 ```
 ResumeScorerApp/
 ├── app.py                      # Main Streamlit Web Application (Glassmorphic UI)
+├── cli.py                      # CLI batch evaluation tool
+├── Dockerfile                  # Production container configuration
 ├── requirements.txt            # Project dependencies
+├── .streamlit/
+│   └── config.toml             # Streamlit UI theme presets & server settings
+├── .github/
+│   └── workflows/ci.yml        # GitHub Actions CI automated testing
+├── tests/
+│   └── test_analyzer.py        # Automated unit test suite
 ├── analyzer/
 │   ├── __init__.py
 │   ├── skills_taxonomy.py      # 2025/2026 AI/ML taxonomies & role benchmarks
@@ -83,23 +88,42 @@ git clone https://github.com/shivrajpawar514-commits/resume-scorer-app.git
 cd resume-scorer-app
 ```
 
-### 2. Set Up Virtual Environment
+### 2. Local Setup
 ```bash
 python3.11 -m venv .venv
 source .venv/bin/activate
-```
-
-### 3. Install Dependencies
-```bash
 pip install -r requirements.txt
 python -m spacy download en_core_web_sm
 ```
 
-### 4. Run the Application
+### 3. Run the Web Application
 ```bash
 streamlit run app.py
 ```
 Open your browser at `http://localhost:8501`.
+
+### 4. Run via CLI
+```bash
+# Evaluate a single resume against a role
+python cli.py --resume path/to/resume.pdf --role "🤖 Generative AI / LLM Engineer" --pdf-out audit.pdf
+
+# Run batch evaluation across a folder of resumes
+python cli.py --batch-dir ./resumes --role "🧠 Machine Learning Engineer" --json-out batch_results.json
+```
+
+### 5. Run via Docker
+```bash
+# Build Docker image
+docker build -t resume-scorer-app .
+
+# Run container
+docker run -p 8501:8501 resume-scorer-app
+```
+
+### 6. Run Unit Tests
+```bash
+python -m unittest discover tests
+```
 
 ---
 

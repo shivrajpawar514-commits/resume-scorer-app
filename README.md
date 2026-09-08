@@ -2,13 +2,14 @@
 
 <div align="center">
 
-![Python Version](https://img.shields.io/badge/Python-3.11%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![Python Version](https://img.shields.io/badge/Python-3.10%20%7C%203.11%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.110%2B-009688?style=for-the-badge&logo=fastapi&logoColor=white)
 ![Streamlit](https://img.shields.io/badge/Streamlit-1.40%2B-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)
 ![SpaCy](https://img.shields.io/badge/SpaCy-3.8%2B-09A3D5?style=for-the-badge&logo=spacy&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)
 ![CI Status](https://img.shields.io/badge/CI-Passing-10B981?style=for-the-badge&logo=github-actions&logoColor=white)
 
-**An advanced, production-grade AI/ML Resume Scorer & ATS Analytics Engine powered by multi-tier NLP parsing, TF-IDF semantic embeddings, Google X-Y-Z quantifiable impact diagnostics, and interactive 5D radar visualizations.**
+**An advanced, production-grade AI/ML Resume Scorer, ATS Analytics Platform & REST API Service powered by multi-tier NLP parsing, TF-IDF semantic embeddings, Google X-Y-Z quantifiable impact diagnostics, and interactive 5D radar visualizations.**
 
 </div>
 
@@ -34,19 +35,23 @@
 - 🌐 **Full-Stack AI Engineer**
 - 📋 **Custom Job Description Mode**: Paste or upload any custom JD text for instant bespoke alignment analysis.
 
-### 3. 📊 Interactive Visualizations
+### 3. 🌐 Production REST API (FastAPI & Swagger Docs)
+- High-throughput headless REST API service (`api.py`) with Swagger UI (`/docs`) and ReDoc (`/redoc`).
+- Single & batch scoring endpoints, multipart resume document uploads, PDF/Markdown report generation, and role taxonomy inspection.
+
+### 4. 📊 Interactive Visualizations & Streamlit Web UI
 - **5D Competency Radar (Plotly)**: Visualizes candidate profile vs ideal benchmark across 5 core dimensions.
 - **Skill Taxonomy Donut Chart**: Breaks down extracted technical skills across specialized AI/ML domains.
 - **Live Search & Filter**: Real-time filterable skill matrix with color-coded badges (`✓ Matched`, `✕ Missing`, `⚡ Secondary`, `★ Bonus`).
 
-### 4. 🔍 Recruiter Bullet-Point & Impact Audit
+### 5. 🔍 Recruiter Bullet-Point & Impact Audit
 - Evaluates compliance with Google's X-Y-Z formula (*"Accomplished [X] as measured by [Y], by doing [Z]"*).
 - Line-by-line ratings (Strong, Moderate, Needs Improvement) with AI suggestions for rewriting weak bullet points.
 
-### 5. 💻 CLI & Batch Evaluation Tool
-- Command-line interface (`cli.py`) for automated scoring and bulk evaluations across entire directories of resumes with JSON and PDF export.
+### 6. 💻 CLI & Batch Evaluation Tool
+- Command-line interface (`cli.py`) for automated scoring and bulk evaluations across entire directories of resumes with JSON, CSV leaderboard, and PDF export.
 
-### 6. 🐳 Docker & CI/CD Ready
+### 7. 🐳 Docker & CI/CD Ready
 - Containerized Docker deployment (`Dockerfile`) and automated GitHub Actions test pipeline (`.github/workflows/ci.yml`).
 
 ---
@@ -56,15 +61,20 @@
 ```
 ResumeScorerApp/
 ├── app.py                      # Main Streamlit Web Application (Glassmorphic UI)
-├── cli.py                      # CLI batch evaluation tool
+├── api.py                      # Production FastAPI REST API Service
+├── cli.py                      # CLI batch evaluation & ranking tool
+├── pyproject.toml              # Build & tool configuration metadata
 ├── Dockerfile                  # Production container configuration
 ├── requirements.txt            # Project dependencies
+├── .editorconfig               # Code formatting standard configuration
 ├── .streamlit/
 │   └── config.toml             # Streamlit UI theme presets & server settings
 ├── .github/
 │   └── workflows/ci.yml        # GitHub Actions CI automated testing
 ├── tests/
-│   └── test_analyzer.py        # Automated unit test suite
+│   ├── test_analyzer.py        # Core NLP & scoring engine unit tests
+│   ├── test_api.py             # FastAPI REST endpoint integration tests
+│   └── test_cli.py             # CLI batch & CSV export unit tests
 ├── analyzer/
 │   ├── __init__.py
 │   ├── skills_taxonomy.py      # 2025/2026 AI/ML taxonomies & role benchmarks
@@ -102,27 +112,44 @@ streamlit run app.py
 ```
 Open your browser at `http://localhost:8501`.
 
-### 4. Run via CLI
+### 4. Run the REST API Server
+```bash
+uvicorn api:app --reload --port 8000
+```
+- Interactive Swagger UI: `http://localhost:8000/docs`
+- ReDoc UI: `http://localhost:8000/redoc`
+
+#### Example REST API Request:
+```bash
+curl -X POST "http://localhost:8000/api/score" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "resume_text": "Experienced Machine Learning Engineer with PyTorch, Docker, Kubernetes, and LLM fine-tuning.",
+       "target_role": "🤖 Generative AI / LLM Engineer"
+     }'
+```
+
+### 5. Run via CLI
 ```bash
 # Evaluate a single resume against a role
 python cli.py --resume path/to/resume.pdf --role "🤖 Generative AI / LLM Engineer" --pdf-out audit.pdf
 
-# Run batch evaluation across a folder of resumes
-python cli.py --batch-dir ./resumes --role "🧠 Machine Learning Engineer" --json-out batch_results.json
+# Run batch evaluation across a folder of resumes with CSV leaderboard export
+python cli.py --batch-dir ./resumes --role "🧠 Machine Learning Engineer" --csv-out leaderboard.csv --json-out batch_results.json
 ```
 
-### 5. Run via Docker
+### 6. Run via Docker
 ```bash
 # Build Docker image
 docker build -t resume-scorer-app .
 
 # Run container
-docker run -p 8501:8501 resume-scorer-app
+docker run -p 8501:8501 -p 8000:8000 resume-scorer-app
 ```
 
-### 6. Run Unit Tests
+### 7. Run Automated Tests
 ```bash
-python -m unittest discover tests
+python -m unittest discover tests -v
 ```
 
 ---

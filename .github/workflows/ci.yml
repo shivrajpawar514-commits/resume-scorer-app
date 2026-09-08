@@ -26,10 +26,12 @@ jobs:
         pip install -r requirements.txt
         python -m spacy download en_core_web_sm
 
-    - name: Run Unit Tests
+    - name: Run Unit Test Suite
       run: |
-        python -m unittest discover tests
+        python -m unittest discover tests -v
 
-    - name: Test CLI Execution
+    - name: Test CLI Execution & Multi-Format Exports
       run: |
-        python cli.py --sample "Senior Generative AI"
+        python cli.py --sample "Senior Generative AI" --json-out test_report.json --csv-out test_leaderboard.csv
+        test -f test_report.json
+        test -f test_leaderboard.csv

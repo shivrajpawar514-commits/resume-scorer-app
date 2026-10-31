@@ -1,6 +1,6 @@
 """
 CLI Resume Scorer & Batch Evaluator
-Run automated resume evaluations and batch audits directly from the command line.
+Run automated resume evaluations, batch audits, and rubric validation directly from the command line.
 """
 
 import os
@@ -15,11 +15,12 @@ from analyzer.extractor import extract_text_from_file
 from analyzer.scoring_engine import score_resume
 from analyzer.report_builder import generate_pdf_report, generate_markdown_report
 from analyzer.sample_resumes import SAMPLE_RESUMES
+from analyzer.evaluation_benchmark import run_rubric_validation
 
 def print_banner():
-    print("=" * 75)
+    print("=" * 80)
     print(" ⚡ AI/ML Resume Scorer & ATS Analytics Engine (CLI Mode)")
-    print("=" * 75)
+    print("=" * 80)
 
 def evaluate_single_file(file_path: str, role_name: Optional[str] = None, jd_path: Optional[str] = None) -> dict:
     if not os.path.exists(file_path):
@@ -41,11 +42,11 @@ def evaluate_single_file(file_path: str, role_name: Optional[str] = None, jd_pat
     return score_resume(resume_text=text, target_role_name=role_name, custom_jd_text=jd_text)
 
 def export_batch_to_csv(batch_results: List[Dict[str, Any]], target_file: str):
-    """Write batch scoring results and 5D breakdowns into CSV format."""
+    """Write batch scoring results and multi-dimensional breakdowns into CSV format."""
     fieldnames = [
         "Rank", "Filename", "Composite Score (%)", "Verdict",
-        "Hard Skills Score", "Semantic Fit Score", "Quant Impact Score",
-        "MLOps Readiness Score", "ATS Health Score",
+        "Hard Skills Score", "Semantic Embedding Score", "Lexical Overlap Score (TF-IDF)",
+        "Quant Impact Score", "MLOps Readiness Score", "ATS Health Score",
         "Matched Core Skills", "Missing Core Skills", "Top Strong Verbs"
     ]
     with open(target_file, "w", newline="", encoding="utf-8") as f:
@@ -62,7 +63,8 @@ def export_batch_to_csv(batch_results: List[Dict[str, Any]], target_file: str):
                 "Composite Score (%)": res.get("composite_score", 0),
                 "Verdict": res.get("verdict", "N/A"),
                 "Hard Skills Score": b.get("hard_skill_score", 0),
-                "Semantic Fit Score": b.get("semantic_score", 0),
+                "Semantic Embedding Score": b.get("semantic_embedding_score", b.get("semantic_score", 0)),
+                "Lexical Overlap Score (TF-IDF)": b.get("lexical_similarity_score", 0),
                 "Quant Impact Score": b.get("impact_score", 0),
                 "MLOps Readiness Score": b.get("mlops_score", 0),
                 "ATS Health Score": b.get("ats_health_score", 0),
@@ -82,9 +84,23 @@ def main():
     parser.add_argument("--pdf-out", type=str, help="Export results to PDF audit report")
     parser.add_argument("--md-out", type=str, help="Export results to Markdown audit report")
     parser.add_argument("--batch-dir", type=str, help="Path to directory containing multiple resumes for batch scoring")
+    parser.add_argument("--validate-rubric", action="store_true", help="Validate scoring rubric against human-reviewed evaluation set")
 
     args = parser.parse_args()
     print_banner()
+
+    if args.validate_rubric:
+        print("\n🔍 Validating Scoring Rubric against Human-Reviewed Evaluation Benchmark Set...")
+        val_report = run_rubric_validation()
+        m = val_report["metrics"]
+        print(f"\n📊 Statistical Benchmark Results (N = {val_report['sample_size']}):")
+        print(f"  • Pearson Correlation (r):           {m['pearson_correlation_r']:.3f} (p = {m['pearson_p_value']:.4f})")
+        print(f"  • Spearman Rank Correlation (rho):   {m['spearman_rank_correlation_rho']:.3f}")
+        print(f"  • Mean Absolute Error (MAE):         {m['mean_absolute_error_mae']:.2f} pts")
+        print(f"  • Root Mean Squared Error (RMSE):    {m['root_mean_squared_error_rmse']:.2f} pts")
+        print(f"  • Tier Concordance Rate:             {m['tier_concordance_rate_pct']:.1f}%")
+        print(f"\n✓ Verdict: {val_report['rubric_soundness_verdict']}")
+        return
 
     if args.sample:
         if args.sample == "list":
@@ -99,33 +115,34 @@ def main():
             if args.sample.lower() in k.lower():
                 matched_sample = k
                 break
+        
         if not matched_sample:
-            print(f"❌ Sample not found: {args.sample}. Use --sample list to view options.")
+            print(f"❌ Sample '{args.sample}' not found. Use '--sample list' to see all options.")
             return
 
-        print(f"📄 Testing Preloaded Sample: {matched_sample}")
+        print(f"📄 Evaluating Preloaded Sample: {matched_sample}")
         results = score_resume(SAMPLE_RESUMES[matched_sample], target_role_name=args.role)
         display_results(results)
         handle_exports(results, args, filename=matched_sample)
         return
 
     if args.batch_dir:
-        if not os.path.exists(args.batch_dir):
-            print(f"❌ Error: Batch directory not found: {args.batch_dir}")
-            return
+        if not os.path.isdir(args.batch_dir):
+            print(f"❌ Error: Directory not found: {args.batch_dir}")
+            sys.exit(1)
 
-        files = [os.path.join(args.batch_dir, f) for f in os.listdir(args.batch_dir) if f.lower().endswith(('.pdf', '.docx', '.txt'))]
+        files = [f for f in os.listdir(args.batch_dir) if f.lower().endswith((".pdf", ".docx", ".txt"))]
         if not files:
-            print(f"No resume files found in {args.batch_dir}")
+            print(f"❌ No compatible resume files (.pdf, .docx, .txt) found in {args.batch_dir}")
             return
 
-        print(f"\n🚀 Running batch evaluation on {len(files)} resumes against '{args.role}'...\n")
-        print(f"{'Rank':<5} | {'Filename':<32} | {'Score':<8} | {'Verdict'}")
+        print(f"\n🚀 Running Batch Evaluation on {len(files)} resumes against role: {args.role}\n")
+        print(f"{'Rank':<5} | {'Candidate / File':<32} | {'Score':<8} | Verdict")
         print("-" * 75)
-        
+
         batch_results = []
-        for file_path in files:
-            fname = os.path.basename(file_path)
+        for fname in sorted(files):
+            file_path = os.path.join(args.batch_dir, fname)
             try:
                 res = evaluate_single_file(file_path, role_name=args.role, jd_path=args.jd)
                 batch_results.append({"filename": fname, "results": res})
@@ -173,17 +190,24 @@ def display_results(results: dict):
     b = results["scores_breakdown"]
     sk = results["skills_summary"]
     imp = results["impact_analysis"]
+    explanations = results.get("explanations", {})
 
-    print("\n" + "=" * 75)
+    print("\n" + "=" * 80)
     print(f" 🎯 TARGET BENCHMARK: {results['target_role']}")
     print(f" 🏆 OVERALL SCORE:   {results['composite_score']}%  ({results['verdict']})")
-    print("=" * 75)
-    print("\n📊 5D Score Breakdown:")
-    print(f"  • Hard Skills Match:       {b['hard_skill_score']}%")
-    print(f"  • TF-IDF Semantic Fit:     {b['semantic_score']}%")
-    print(f"  • Quantifiable Impact:     {b['impact_score']}%")
-    print(f"  • MLOps & Production:      {b['mlops_score']}%")
-    print(f"  • ATS Health & Structure:  {b['ats_health_score']}%")
+    print("=" * 80)
+
+    print("\n📊 Multi-Dimensional Rubric Breakdown:")
+    print(f"  • Hard Skills Match (30%):        {b.get('hard_skill_score', 0)}%")
+    print(f"  • Semantic Embeddings (20%):      {b.get('semantic_embedding_score', b.get('semantic_score', 0))}% (Dense Transformer)")
+    print(f"  • Lexical Overlap TF-IDF (10%):   {b.get('lexical_similarity_score', 0)}% (Keyword Frequency)")
+    print(f"  • Quantifiable Impact (15%):      {b.get('impact_score', 0)}%")
+    print(f"  • MLOps & Production (10%):       {b.get('mlops_score', 0)}%")
+    print(f"  • ATS Health & Structure (15%):   {b.get('ats_health_score', 0)}%")
+
+    print("\n🔍 Defensible Score Explanations:")
+    for comp, exp in explanations.items():
+        print(f"  • {comp.replace('_', ' ').title()}: {exp}")
 
     print("\n🧠 Skill Alignment:")
     print(f"  • Matched Core ({len(sk['matched_core'])}): {', '.join(sk['matched_core'][:10])}")
@@ -194,7 +218,9 @@ def display_results(results: dict):
     print(f"  • Action Verbs Found:     {', '.join(imp['strong_verbs_found'][:8]) or 'None'}")
     print(f"  • Quant Metrics Found:    {', '.join(imp['metrics_found'][:6]) or 'None'}")
     print(f"  • Strong X-Y-Z Bullets:   {imp['strong_bullets_count']} / {imp['total_bullets_analyzed']}")
-    print("=" * 75 + "\n")
+
+    print(f"\n⚠️  {results.get('rubric_disclaimer')}")
+    print("=" * 80 + "\n")
 
 def handle_exports(results: dict, args, filename: str = "resume"):
     if args.json_out:

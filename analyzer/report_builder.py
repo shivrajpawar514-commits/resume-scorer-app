@@ -1,6 +1,7 @@
 """
 Resume Scorer Report Generator
 Generates PDF and Markdown summary reports for candidate download.
+Includes defensible scoring explanations, rubric disclaimers, and candidate privacy guarantees.
 """
 
 import io
@@ -14,6 +15,7 @@ def generate_markdown_report(analysis_results: Dict[str, Any]) -> str:
     impact = res["impact_analysis"]
     readability = res["readability"]
     contact = res["contact_info"]
+    explanations = res.get("explanations", {})
 
     md = f"""# 📄 AI/ML Resume Scorer & Analytics Audit Report
 
@@ -22,15 +24,31 @@ def generate_markdown_report(analysis_results: Dict[str, Any]) -> str:
 **Verdict:** {res['verdict']}  
 **Assessment Summary:** {res['verdict_desc']}
 
+> ⚠️ **Rubric Disclaimer**: The composite score is a transparent heuristic rubric designed for candidate self-assessment and ATS formatting optimization. A weighted score is a simulated model, not an actual commercial employer ATS algorithm or automated hiring decision.
+
+> 🛡️ **Data Privacy Guarantee**: Candidate documents are evaluated ephemerally in-memory under a strict Zero-Retention policy. No applicant text or contact PII is saved to disk, databases, or external telemetry.
+
 ---
 
-## 📊 Score Breakdown
-- **Core AI/ML Hard Skills:** {breakdown['hard_skill_score']}%
-- **TF-IDF Semantic Similarity:** {breakdown['semantic_score']}%
-- **Quantifiable Impact & Action Verbs:** {breakdown['impact_score']}%
-- **MLOps & Production Readiness:** {breakdown['mlops_score']}%
-- **ATS Formatting & Structure Health:** {breakdown['ats_health_score']}%
+## 📊 Score Breakdown (6-Dimensional Rubric)
+- **🎯 Core AI/ML Hard Skills (Weight: 30%):** {breakdown.get('hard_skill_score', 0)}%
+- **🧠 Dense Semantic Embeddings (Weight: 20%):** {breakdown.get('semantic_embedding_score', breakdown.get('semantic_score', 0))}%
+  *(Measures true contextual meaning, domain depth, and synonymous role competencies via transformer embeddings)*
+- **📐 Lexical TF-IDF Vocabulary Overlap (Weight: 10%):** {breakdown.get('lexical_similarity_score', 0)}%
+  *(Notice: Measures surface keyword frequency and n-gram lexical overlap, not semantic understanding)*
+- **💥 Quantifiable Impact & Action Verbs (Weight: 15%):** {breakdown.get('impact_score', 0)}%
+- **⚙️ MLOps & Production Readiness (Weight: 10%):** {breakdown.get('mlops_score', 0)}%
+- **🛡️ ATS Formatting & Structure Health (Weight: 15%):** {breakdown.get('ats_health_score', 0)}%
 
+---
+
+## 🔍 Defensible Scoring Explanations (Why each score was assigned)
+"""
+    for comp, text in explanations.items():
+        comp_title = comp.replace('_', ' ').title()
+        md += f"- **{comp_title}:** {text}\n"
+
+    md += f"""
 ---
 
 ## 👤 Candidate Contact & Profile
@@ -106,42 +124,41 @@ def generate_pdf_report(analysis_results: Dict[str, Any]) -> bytes:
         title_style = ParagraphStyle(
             'TitleStyle',
             parent=styles['Heading1'],
-            fontSize=18,
-            leading=22,
+            fontSize=16,
+            leading=20,
             textColor=colors.HexColor('#1E293B'),
-            spaceAfter=6
+            spaceAfter=4
         )
         subtitle_style = ParagraphStyle(
             'SubTitleStyle',
             parent=styles['Normal'],
-            fontSize=10,
-            leading=14,
+            fontSize=9,
+            leading=13,
             textColor=colors.HexColor('#64748B'),
-            spaceAfter=12
+            spaceAfter=8
         )
         heading_style = ParagraphStyle(
             'HeadingStyle',
             parent=styles['Heading2'],
-            fontSize=12,
-            leading=16,
+            fontSize=11,
+            leading=15,
             textColor=colors.HexColor('#0F172A'),
-            spaceBefore=10,
-            spaceAfter=6
+            spaceBefore=8,
+            spaceAfter=4
         )
         body_style = ParagraphStyle(
             'BodyStyle',
             parent=styles['Normal'],
-            fontSize=9,
-            leading=13,
+            fontSize=8.5,
+            leading=12,
             textColor=colors.HexColor('#334155')
         )
-        badge_style = ParagraphStyle(
-            'BadgeStyle',
+        disclaimer_style = ParagraphStyle(
+            'DisclaimerStyle',
             parent=styles['Normal'],
-            fontSize=13,
-            leading=16,
-            textColor=colors.HexColor('#059669'),
-            alignment=1
+            fontSize=7.5,
+            leading=10,
+            textColor=colors.HexColor('#64748B')
         )
 
         elements = []
@@ -153,109 +170,69 @@ def generate_pdf_report(analysis_results: Dict[str, Any]) -> bytes:
 
         # Title
         elements.append(Paragraph("<b>AI/ML RESUME AUDIT & ATS SCORER REPORT</b>", title_style))
-        elements.append(Paragraph(f"Target Benchmark: <b>{res['target_role']}</b>", subtitle_style))
-        elements.append(HRFlowable(width="100%", thickness=1.5, color=colors.HexColor('#3B82F6'), spaceAfter=10))
+        elements.append(Paragraph(f"Target Benchmark: <b>{res['target_role']}</b> | Overall Match: <b>{res['composite_score']}% ({res['verdict']})</b>", subtitle_style))
+        elements.append(HRFlowable(width="100%", thickness=1.5, color=colors.HexColor('#3B82F6'), spaceAfter=8))
 
-        # Overall Score Box
-        score_data = [
-            [
-                Paragraph(f"<b>Overall Score</b><br/><font size=24 color='#2563EB'><b>{res['composite_score']}%</b></font>", badge_style),
-                Paragraph(f"<b>Assessment Verdict</b><br/><b>{res['verdict']}</b><br/><font size=8 color='#475569'>{res['verdict_desc']}</font>", body_style)
-            ]
-        ]
-        score_table = Table(score_data, colWidths=[140, 390])
-        score_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#F8FAFC')),
-            ('BOX', (0, 0), (-1, -1), 1, colors.HexColor('#E2E8F0')),
-            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('PADDING', (0, 0), (-1, -1), 8),
-        ]))
-        elements.append(score_table)
-        elements.append(Spacer(1, 10))
+        # Disclaimer banner
+        elements.append(Paragraph(
+            "<b>Rubric Notice:</b> Heuristic evaluation rubric for applicant preparation and ATS formatting optimization. "
+            "A weighted score is a simulation model, not an actual commercial employer ATS algorithm or hiring decision.",
+            disclaimer_style
+        ))
+        elements.append(Spacer(1, 6))
 
-        # Breakdown Table
-        elements.append(Paragraph("<b>1. Multi-Dimensional Score Breakdown</b>", heading_style))
-        breakdown_data = [
-            ["Dimension", "Score", "Evaluation Metric"],
-            ["Core AI/ML Skills", f"{breakdown['hard_skill_score']}%", "Direct keyword phrase matching for required tools"],
-            ["TF-IDF Semantic Fit", f"{breakdown['semantic_score']}%", "Mathematical contextual vector similarity"],
-            ["Quantifiable Impact", f"{breakdown['impact_score']}%", "Action verbs and quantified metrics (%, $, scale)"],
-            ["MLOps & Infrastructure", f"{breakdown['mlops_score']}%", "Deployment, Docker, pipelines, and monitoring tools"],
-            ["ATS Health & Readability", f"{breakdown['ats_health_score']}%", "Flesch reading ease, structure & contact details"]
+        # Score Breakdown Table
+        breakdown_table_data = [
+            ["Rubric Dimension", "Weight", "Score", "Methodology / Description"],
+            ["Core AI/ML Skills", "30%", f"{breakdown.get('hard_skill_score', 0)}%", "Core & secondary technical competency match ratio"],
+            ["Semantic Embeddings", "20%", f"{breakdown.get('semantic_embedding_score', breakdown.get('semantic_score', 0))}%", "Dense transformer vector embeddings (deep contextual alignment)"],
+            ["Lexical Overlap (TF-IDF)", "10%", f"{breakdown.get('lexical_similarity_score', 0)}%", "Keyword frequency & n-gram lexical overlap (surface vocabulary)"],
+            ["Quantifiable Impact", "15%", f"{breakdown.get('impact_score', 0)}%", "Action verb strength and X-Y-Z quantifiable metric density"],
+            ["MLOps Readiness", "10%", f"{breakdown.get('mlops_score', 0)}%", "Production tool stack (Docker, K8s, MLflow, CI/CD, pipelines)"],
+            ["ATS Structure & Health", "15%", f"{breakdown.get('ats_health_score', 0)}%", "Section completeness, contact info, length, readability ease"]
         ]
-        breakdown_table = Table(breakdown_data, colWidths=[150, 60, 320])
-        breakdown_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#F1F5F9')),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#0F172A')),
+        t = Table(breakdown_table_data, colWidths=[130, 45, 55, 310])
+        t.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1E293B')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
             ('FONTSIZE', (0, 0), (-1, -1), 8),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
-            ('TOPPADDING', (0, 0), (-1, -1), 4),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.HexColor('#F8FAFC'), colors.HexColor('#FFFFFF')]),
             ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#CBD5E1')),
+            ('ALIGN', (1, 0), (2, -1), 'CENTER'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('TOPPADDING', (0, 0), (-1, -1), 4),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
         ]))
-        elements.append(breakdown_table)
-        elements.append(Spacer(1, 10))
+        elements.append(t)
+        elements.append(Spacer(1, 8))
+
+        # Defensible Explanations
+        elements.append(Paragraph("<b>Score Rationales & Defensible Explanations</b>", heading_style))
+        for comp, exp in res.get("explanations", {}).items():
+            elements.append(Paragraph(f"• <b>{comp.replace('_', ' ').title()}:</b> {exp}", body_style))
+        elements.append(Spacer(1, 8))
 
         # Skills Summary
-        elements.append(Paragraph("<b>2. Key Competencies & Skill Gaps</b>", heading_style))
-        matched_str = ", ".join(skills["matched_core"]) if skills["matched_core"] else "None detected"
-        missing_str = ", ".join(skills["missing_core"]) if skills["missing_core"] else "Full Core Alignment!"
-        bonus_str = ", ".join(skills["bonus_skills"][:10]) if skills["bonus_skills"] else "None"
+        elements.append(Paragraph("<b>Skills Diagnostics & Gaps</b>", heading_style))
+        matched_str = ", ".join(skills['matched_core']) if skills['matched_core'] else "None detected"
+        missing_str = ", ".join(skills['missing_core']) if skills['missing_core'] else "None (Full core coverage!)"
+        elements.append(Paragraph(f"<b>Matched Core:</b> {matched_str}", body_style))
+        elements.append(Paragraph(f"<b>Missing Core:</b> <font color='#DC2626'>{missing_str}</font>", body_style))
+        elements.append(Spacer(1, 8))
 
-        skills_table_data = [
-            [Paragraph("<b>Matched Core Skills:</b>", body_style), Paragraph(f"<font color='#059669'>{matched_str}</font>", body_style)],
-            [Paragraph("<b>Missing Critical Skills:</b>", body_style), Paragraph(f"<font color='#DC2626'>{missing_str}</font>", body_style)],
-            [Paragraph("<b>Bonus Skills:</b>", body_style), Paragraph(bonus_str, body_style)]
-        ]
-        skills_table = Table(skills_table_data, colWidths=[150, 380])
-        skills_table.setStyle(TableStyle([
-            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#E2E8F0')),
-            ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#F8FAFC')),
-            ('PADDING', (0, 0), (-1, -1), 5),
-            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-        ]))
-        elements.append(skills_table)
-        elements.append(Spacer(1, 10))
-
-        # Bullet Impact
-        elements.append(Paragraph("<b>3. Recruiter Bullet Point & Impact Review</b>", heading_style))
-        verbs_str = ", ".join(impact["strong_verbs_found"][:10]) if impact["strong_verbs_found"] else "None"
-        metrics_str = ", ".join(impact["metrics_found"][:8]) if impact["metrics_found"] else "None"
-        
-        impact_table_data = [
-            [Paragraph("<b>Strong Verbs Found:</b>", body_style), Paragraph(verbs_str, body_style)],
-            [Paragraph("<b>Quantified Metrics:</b>", body_style), Paragraph(metrics_str, body_style)],
-            [Paragraph("<b>X-Y-Z Strong Bullets:</b>", body_style), Paragraph(f"{impact['strong_bullets_count']} of {impact['total_bullets_analyzed']} analyzed", body_style)]
-        ]
-        impact_table = Table(impact_table_data, colWidths=[150, 380])
-        impact_table.setStyle(TableStyle([
-            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#E2E8F0')),
-            ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#F8FAFC')),
-            ('PADDING', (0, 0), (-1, -1), 5),
-            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-        ]))
-        elements.append(impact_table)
-        elements.append(Spacer(1, 10))
-
-        # Recommendations
-        elements.append(Paragraph("<b>4. Recommended Action Steps</b>", heading_style))
-        rec_items = []
-        for rec in res["learning_recommendations"][:5]:
-            rec_items.append([
-                Paragraph(f"<b>[{rec['priority'].split()[0]}] {rec['skill'].title()}</b>", body_style),
-                Paragraph(f"{rec['title']}", body_style)
-            ])
-        if rec_items:
-            rec_table = Table(rec_items, colWidths=[160, 370])
-            rec_table.setStyle(TableStyle([
-                ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#E2E8F0')),
-                ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#F8FAFC')),
-                ('PADDING', (0, 0), (-1, -1), 4),
-            ]))
-            elements.append(rec_table)
+        # Contact and Privacy
+        elements.append(Paragraph("<b>Zero-Retention Data Privacy Guarantee</b>", heading_style))
+        elements.append(Paragraph(
+            "Uploaded resumes are processed strictly in-memory during evaluation and immediately discarded. "
+            "No candidate resume text, extracted PII, or contact records are saved to disk, databases, or external telemetry.",
+            disclaimer_style
+        ))
 
         doc.build(elements)
+        buffer.seek(0)
         return buffer.getvalue()
+
     except Exception as e:
-        # Fallback to plain bytes text if reportlab fails
-        return f"PDF Generation Error: {str(e)}".encode("utf-8")
+        # Fallback minimal plain text PDF or error representation
+        return f"PDF generation error: {str(e)}".encode("utf-8")

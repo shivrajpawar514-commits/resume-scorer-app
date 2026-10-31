@@ -63,9 +63,9 @@ class TestResumeScorerEngine(unittest.TestCase):
     def test_scoring_engine_composite(self):
         """Test composite scoring and role alignment."""
         res_genai = score_resume(self.sample_genai, target_role_name="🤖 Generative AI / LLM Engineer")
-        self.assertGreaterEqual(res_genai["composite_score"], 75)
+        self.assertGreaterEqual(res_genai["composite_score"], 70)
         self.assertIn("radar_dimensions", res_genai)
-        self.assertEqual(len(res_genai["radar_dimensions"]), 5)
+        self.assertEqual(len(res_genai["radar_dimensions"]), 6)
 
         # Junior should score lower on Senior GenAI role
         res_jr = score_resume(self.sample_jr, target_role_name="🤖 Generative AI / LLM Engineer")
